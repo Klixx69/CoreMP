@@ -149,6 +149,8 @@ public:
 	static inline void (*OnDamageServer)(ABuildingActor* BuildingActor, float Damage, FGameplayTagContainer DamageTags, FVector Momentum, FHitResult HitInfo, AController* InstigatedBy, AActor* DamageCauser, FGameplayEffectContextHandle EffectContext);
 	static void OnDamageServerHook(ABuildingSMActor* BuildingActor, float Damage, FGameplayTagContainer DamageTags, FVector Momentum, FHitResult HitInfo, AController* InstigatedBy, AActor* DamageCauser, FGameplayEffectContextHandle EffectContext)
 	{
+		CORE_LOG(Farming, "OnDamageServer: {}, InstigatedBy: {}", BuildingActor->GetName(), InstigatedBy->GetName());
+
 		bool bHitWeakPoint = Damage == 100;
 
 		if (InstigatedBy && InstigatedBy->IsA(AFortPlayerController::StaticClass()) && !BuildingActor->bPlayerPlaced)
@@ -313,8 +315,121 @@ public:
 		return OnDamageServer(BuildingActor, Damage, DamageTags, Momentum, HitInfo, InstigatedBy, DamageCauser, EffectContext);
 	}
 
+	static void ServerBeginEditingBuildingActorHook(AFortPlayerController* PlayerController, ABuildingSMActor* BuildingActorToEdit)
+	{
+		auto FortPawn = PlayerController->MyFortPawn;
+		static auto EditToolDef = UObject::FindObjectFast<UFortEditToolItemDefinition>("/Game/Items/Weapons/BuildingTools/EditTool.EditTool");
+		FortPawn->EquipWeaponDefinition(EditToolDef, FGuid());
+
+		BuildingActorToEdit->EditingPlayer = (AFortPlayerStateAthena*)PlayerController->PlayerState;
+		BuildingActorToEdit->OnRep_EditingPlayer();
+
+		auto EditTool = (AFortWeap_EditingTool*)(FortPawn->CurrentWeapon);
+		EditTool->EditActor = BuildingActorToEdit;
+		EditTool->OnRep_EditActor();
+	}
+
+	static void ServerCreateBuildingActorHook(AFortPlayerController* PlayerController, FBuildingClassData BuildingClassData, FVector_NetQuantize10 BuildLoc, FRotator BuildRot, bool bMirrored, float SyncKey)
+	{
+		auto BuildingActor = SpawnActor<ABuildingSMActor>(BuildLoc, BuildRot, BuildingClassData.BuildingClass);
+		if (BuildingActor)
+		{
+			BuildingActor->Team = ((AFortPlayerStateAthena*)PlayerController->PlayerState)->TeamIndex;
+			BuildingActor->OnRep_Team();
+			BuildingActor->bPlayerPlaced = true;
+			BuildingActor->ForceNetUpdate();
+			BuildingActor->InitializeKismetSpawnedBuildingActor(BuildingActor, PlayerController, true);
+
+			static auto WoodDefinition = UObject::FindObjectFast<UFortItemDefinition>("/Game/Items/ResourcePickups/WoodItemData.WoodItemData");
+			static auto StoneDefinition = UObject::FindObjectFast<UFortItemDefinition>("/Game/Items/ResourcePickups/StoneItemData.StoneItemData");
+			static auto MetalDefinition = UObject::FindObjectFast<UFortItemDefinition>("/Game/Items/ResourcePickups/MetalItemData.MetalItemData");
+
+			UFortItemDefinition* CurrentResourceDefinition = nullptr;
+
+			switch (BuildingActor->ResourceType)
+			{
+			case EFortResourceType::Wood:
+				CurrentResourceDefinition = WoodDefinition;
+				break;
+			case EFortResourceType::Stone:
+				CurrentResourceDefinition = StoneDefinition;
+				break;
+			case EFortResourceType::Metal:
+				CurrentResourceDefinition = MetalDefinition;
+				break;
+			default:
+				CurrentResourceDefinition = WoodDefinition;
+				break;
+			}
+
+			if (CurrentResourceDefinition)
+			{
+				auto WorldInventory = PlayerController->WorldInventory;
+
+				for (int i = 0; i < WorldInventory->Inventory.ItemInstances.Num(); i++)
+				{
+					auto ItemInstance = WorldInventory->Inventory.ItemInstances[i];
+
+					if (ItemInstance->GetItemDefinitionBP() == CurrentResourceDefinition)
+					{
+						if (ItemInstance->ItemEntry.Count > 10)
+						{
+							ItemInstance->ItemEntry.Count = ItemInstance->ItemEntry.Count - 10;
+							WorldInventory->Inventory.MarkItemDirty(ItemInstance->ItemEntry);
+
+							for (int j = 0; j < WorldInventory->Inventory.ReplicatedEntries.Num(); j++)
+							{
+								auto Entry = &WorldInventory->Inventory.ReplicatedEntries[j];
+								if (Entry->ItemDefinition == CurrentResourceDefinition)
+								{
+									Entry->Count = Entry->Count - 10;
+									WorldInventory->Inventory.MarkItemDirty(*Entry);
+								}
+							}
+						}
+						else {
+							break;
+						}
+					}
+				}
+
+				Inventory::Update(PlayerController);
+			}
+		}
+	}
+
+	static inline ABuildingSMActor* (*ConfirmEdit)(ABuildingSMActor* BuildingActor, __int64 a2, UObject* Class, int a3, int a4, uint8_t a5, UObject* PlayerController);
+
+	static void ServerEditBuildingActorHook(AFortPlayerController* PlayerController, ABuildingSMActor* BuildingActorToEdit, UClass* NewBuildingClass, int RotationIterations, bool bMirrored)
+	{
+		if (auto EditActor = ConfirmEdit(BuildingActorToEdit, 1, NewBuildingClass, 0, RotationIterations, bMirrored, PlayerController))
+			EditActor->bPlayerPlaced = true;
+	}
+
+	static void ServerEndEditingBuildingActor(AFortPlayerController* PlayerController, ABuildingSMActor* BuildingActorToStopEditing)
+	{
+		auto FortPawn = PlayerController->MyFortPawn;
+
+		if (!FortPawn)
+			return;
+
+		if (!BuildingActorToStopEditing)
+			return;
+
+		BuildingActorToStopEditing->EditingPlayer = nullptr;
+		BuildingActorToStopEditing->OnRep_EditingPlayer();
+
+		auto EditTool = (AFortWeap_EditingTool*)(FortPawn->CurrentWeapon);
+		EditTool->EditActor = nullptr;
+		EditTool->OnRep_EditActor();
+	}
+
+
+
 	static void Init()
 	{
+		ConfirmEdit = decltype(ConfirmEdit)(Util::BaseAddress() + 0xE563C0);
+
 		auto DefaultPC = UObject::FindObject<AFortPlayerControllerAthena>("Default__Athena_PlayerController");
 		auto DefaultAbilityComp = UObject::FindObject<UFortAbilitySystemComponentAthena>("Default__FortAbilitySystemComponentAthena");
 
@@ -324,10 +439,16 @@ public:
 		VIRTUAL_HOOK(DefaultPC, 261, ServerAcknowledgePossessionHook, nullptr);
 		VIRTUAL_HOOK(DefaultPC, 1061, ServerAttemptAircraftJumpHook, nullptr);
 		VIRTUAL_HOOK(DefaultPC, 500, ServerExecuteInventoryItemHook, nullptr);
+		VIRTUAL_HOOK(DefaultPC, 537, ServerBeginEditingBuildingActorHook, nullptr);
+		VIRTUAL_HOOK(DefaultPC, 530, ServerCreateBuildingActorHook, nullptr);
+		VIRTUAL_HOOK(DefaultPC, 532, ServerEditBuildingActorHook, nullptr);
+		VIRTUAL_HOOK(DefaultPC, 535, ServerEndEditingBuildingActor, nullptr);
+
 
 		VIRTUAL_HOOK(DefaultAbilityComp, 140, ServerTryActivateAbilityHook, nullptr);
 		VIRTUAL_HOOK(DefaultAbilityComp, 138, ServerTryActivateAbilityWithEventDataHook, nullptr);
 		VIRTUAL_HOOK(DefaultAbilityComp, 155, ServerAbilityRPCBatchHook, nullptr);
+
 
 	}
 };
