@@ -14,6 +14,9 @@
     <ClCompile Include="SDK\FN_FortniteGame_functions.cpp">
       <Filter>SDK</Filter>
     </ClCompile>
+    <ClCompile Include="SDK\FN_GameplayAbilities_functions.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">
@@ -33,6 +36,9 @@
     </Filter>
     <Filter Include="Net">
       <UniqueIdentifier>{1afea76b-311c-42a9-8192-8922bc6b8c79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gameplay">
+      <UniqueIdentifier>{6b5e65e7-320b-447f-81a1-62aa63abc687}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -59,6 +65,12 @@
     </ClInclude>
     <ClInclude Include="NetHooks.h">
       <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="Abilities.h">
+      <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Inventory.h">
+      <Filter>Gameplay</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

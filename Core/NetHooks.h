@@ -48,6 +48,10 @@ public:
 			PlayerState->bHasFinishedLoading = true;
 			PlayerState->bHasStartedPlaying = true;
 			PlayerState->OnRep_bHasStartedPlaying();
+
+			Abilities::GiveAbilities(Pawn);
+			Inventory::Setup(PlayerController);
+			Inventory::Update(PlayerController);
 		}
 
 		return SetClientLoginState(NetConnection, State);

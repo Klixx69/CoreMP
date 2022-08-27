@@ -19,6 +19,9 @@
 #include "Util.h"
 #include "Core.h"
 
+#include "Abilities.h"
+#include "Inventory.h"
+
 #include "NetHooks.h"
 #include "Net.h"
 
@@ -43,6 +46,7 @@ DWORD WINAPI MainThread(LPVOID)
 
     GetLocalPlayerController()->SwitchLevel(L"Athena_Terrain");
 
+    Abilities::Init();
     Hooks::Init();
     NativeHooks::Init();
     Net::Init();
