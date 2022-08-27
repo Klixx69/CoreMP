@@ -1,4 +1,14 @@
 #include <Windows.h>
+#include <cstdint>
+#include <winnt.h>
+#include <cstdio>
+#include <consoleapi.h>
+#include <libloaderapi.h>
+#include <vector>
+#include <iostream>
+#include <Psapi.h>
+#include <fstream>
+#include <format>
 
 #include "minhook/MinHook.h"
 
@@ -6,9 +16,19 @@
 
 #include "Util.h"
 
+#include "Core.h"
+
 DWORD WINAPI MainThread(LPVOID)
 {
+    Util::InitConsole();
 
+    CORE_LOG(INIT, "Setting up.");
+
+    Core::Init();
+
+
+
+    CORE_LOG(INIT, "Setup.");
 
     return 0;
 }
