@@ -1,19 +1,22 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
-#include "pch.h"
+#include <Windows.h>
 
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
+#include "minhook/MinHook.h"
+
+#pragma comment(lib, "minhook/minhook.lib")
+
+#include "Util.h"
+
+DWORD WINAPI MainThread(LPVOID)
 {
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
+
+
+    return 0;
 }
 
+BOOL APIENTRY DllMain(HMODULE mod, DWORD reason, LPVOID res)
+{
+    if (reason == 1)
+        CreateThread(0, 0, MainThread, mod, 0, 0);
+
+    return TRUE;
+}
