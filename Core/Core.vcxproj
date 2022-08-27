@@ -63,6 +63,8 @@
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="Loot.h" />
     <ClInclude Include="NativeHooks.h" />
+    <ClInclude Include="Net.h" />
+    <ClInclude Include="NetHooks.h" />
     <ClInclude Include="SDK.hpp" />
     <ClInclude Include="Util.h" />
   </ItemGroup>

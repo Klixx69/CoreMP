@@ -19,6 +19,9 @@
 #include "Util.h"
 #include "Core.h"
 
+#include "NetHooks.h"
+#include "Net.h"
+
 #include "Hooks.h"
 #include "NativeHooks.h"
 
@@ -42,6 +45,8 @@ DWORD WINAPI MainThread(LPVOID)
 
     Hooks::Init();
     NativeHooks::Init();
+    Net::Init();
+    NetHooks::Init();
 
     CORE_LOG(Init, "Setup.");
 

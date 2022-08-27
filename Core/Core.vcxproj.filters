@@ -31,6 +31,9 @@
     <Filter Include="SDK">
       <UniqueIdentifier>{ff826832-e5f2-4893-a7d3-a0b9f998a8a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{1afea76b-311c-42a9-8192-8922bc6b8c79}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Util.h">
@@ -50,6 +53,12 @@
     </ClInclude>
     <ClInclude Include="NativeHooks.h">
       <Filter>Hooks\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="Net.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="NetHooks.h">
+      <Filter>Net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

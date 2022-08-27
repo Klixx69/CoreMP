@@ -15,6 +15,9 @@ MH_DisableHook((void*)(Address));
 #define ENABLE_HOOK(Address) \
 MH_EnableHook((void*)(Address));
 
+#define VIRTUAL_HOOK(Object, Vft, Hook, Og) \
+Util::VirtualHook(Object, Vft, Hook, (void**)(Og));
+
 class Util
 {
 public:
@@ -37,5 +40,12 @@ public:
 	{
 		std::cout << "LogCore: " << Category << ": " << Msg << std::endl;
 		LogFile << "LogCore: " << Category << ": " << Msg << std::endl;
+	}
+
+	static __forceinline void VirtualHook(void* Object, int Vft, void* Hook, void** Og)
+	{
+		if (!Og)
+			*Og = (*(void***)(Object))[Vft];
+		(*(void***)(Object))[Vft] = Hook;
 	}
 };
