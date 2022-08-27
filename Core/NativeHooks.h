@@ -42,13 +42,23 @@ public:
 			}
 		}
 
-		ServerUpdateLevelVisibility(PlayerController, PackageName, bIsVisible);
+		return ServerUpdateLevelVisibility(PlayerController, PackageName, bIsVisible);
 	}
 
-	static inline void (*ServerAcknowledgePossession)(APlayerController* PlayerController, APawn* P);
 	static inline void ServerAcknowledgePossessionHook(APlayerController* PlayerController, APawn* P)
 	{
 		PlayerController->AcknowledgedPawn = P;
+	}
+
+	static inline void ServerAttemptAircraftJumpHook(AFortPlayerControllerAthena* PlayerController, FRotator ClientRotation)
+	{
+		if (PlayerController->Pawn)
+			return;
+
+		auto Pawn = SpawnActor<APlayerPawn_Athena_C>(Cast<AFortGameStateAthena>(GetWorld()->GameState)->GetAircraft(0)->K2_GetActorLocation());
+		PlayerController->Possess(Pawn);
+
+		PlayerController->SetControlRotation(ClientRotation);
 	}
 
 	static void Init()
@@ -57,6 +67,7 @@ public:
 
 		CREATE_HOOK(Util::BaseAddress() + 0x2AF8910, ServerUpdateLevelVisibilityHook, &ServerUpdateLevelVisibility);
 		
-		VIRTUAL_HOOK(DefaultPC, 261, ServerAcknowledgePossessionHook, &ServerAcknowledgePossession);
+		VIRTUAL_HOOK(DefaultPC, 261, ServerAcknowledgePossessionHook, nullptr);
+		VIRTUAL_HOOK(DefaultPC, 1061, ServerAttemptAircraftJumpHook, nullptr);
 	}
 };

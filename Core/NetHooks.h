@@ -42,6 +42,7 @@ public:
 			PlayerController->OverriddenBackpackSize = 5;
 
 			auto PlayerState = (AFortPlayerStateAthena*)(PlayerController->PlayerState);
+
 			PlayerState->OnRep_SquadId();
 
 			PlayerState->bHasFinishedLoading = true;

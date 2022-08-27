@@ -44,7 +44,7 @@ public:
 
 	static __forceinline void VirtualHook(void* Object, int Vft, void* Hook, void** Og)
 	{
-		if (!Og)
+		if (Og)
 			*Og = (*(void***)(Object))[Vft];
 		(*(void***)(Object))[Vft] = Hook;
 	}
