@@ -5,6 +5,16 @@ std::fstream LogFile;
 #define CORE_LOG(Category, Msg, ...) \
 Util::Log(#Category, std::format(Msg, __VA_ARGS__));
 
+#define CREATE_HOOK(Address, Hook, Og) \
+MH_CreateHook((void*)(Address), Hook, (void**)(Og)); \
+MH_EnableHook((void*)(Address));
+
+#define DISABLE_HOOK(Address) \
+MH_DisableHook((void*)(Address));
+
+#define ENABLE_HOOK(Address) \
+MH_EnableHook((void*)(Address));
+
 class Util
 {
 public:
@@ -25,7 +35,7 @@ public:
 
 	static __forceinline void Log(std::string Category, std::string Msg)
 	{
-		std::cout << "LogCore: " << std::format("[{}]", Category) << Msg << std::endl;
-		LogFile << "LogCore: " << std::format("[{}]", Category) << Msg << std::endl;
+		std::cout << "LogCore: " << Category << ": " << Msg << std::endl;
+		LogFile << "LogCore: " << Category << ": " << Msg << std::endl;
 	}
 };

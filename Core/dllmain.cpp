@@ -14,21 +14,36 @@
 
 #pragma comment(lib, "minhook/minhook.lib")
 
-#include "Util.h"
+#include "SDK.hpp"
 
+#include "Util.h"
 #include "Core.h"
+
+#include "Hooks.h"
+#include "NativeHooks.h"
 
 DWORD WINAPI MainThread(LPVOID)
 {
     Util::InitConsole();
 
-    CORE_LOG(INIT, "Setting up.");
+    CORE_LOG(Init, "Setting up.");
+
+    MH_Initialize();
+
+    UObject::GObjects = decltype(UObject::GObjects)(Util::BaseAddress() + 0x5B1B0B0);
+    FMemory_Free = decltype(FMemory_Free)(Cool::CoolSigScan("48 85 C9 74 ? 53 48 83 EC ? 48 8B D9 48 8B 0D"));
+    FMemory_Malloc = decltype(FMemory_Malloc)(Cool::CoolSigScan("48 89 5C 24 08 57 48 83 EC ? 48 8B F9 8B DA 48 8B 0D ? ? ? ? 48 85 C9"));
+    FMemory_Realloc = decltype(FMemory_Realloc)(Cool::CoolSigScan("48 89 5C 24 08 48 89 74 24 10 57 48 83 EC ? 48 8B F1 41 8B D8 48 8B 0D"));
+    FNameToString = decltype(FNameToString)(Cool::CoolSigScan("48 89 5C 24 08 57 48 83 EC ? 83 79 04 ? 48 8B DA"));
 
     Core::Init();
 
+    GetLocalPlayerController()->SwitchLevel(L"Athena_Terrain");
 
+    Hooks::Init();
+    NativeHooks::Init();
 
-    CORE_LOG(INIT, "Setup.");
+    CORE_LOG(Init, "Setup.");
 
     return 0;
 }
