@@ -424,8 +424,6 @@ public:
 		EditTool->OnRep_EditActor();
 	}
 
-
-
 	static void Init()
 	{
 		ConfirmEdit = decltype(ConfirmEdit)(Util::BaseAddress() + 0xE563C0);
