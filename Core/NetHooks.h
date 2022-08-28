@@ -21,6 +21,13 @@ public:
 	{
 		if (State == 3)
 		{
+			static bool bSpawnedFloorLoot = false;
+			if (!bSpawnedFloorLoot)
+			{
+				bSpawnedFloorLoot = true;
+				Loot::SpawnFloorLoot();
+			}
+
 			auto PlayerController = (AFortPlayerControllerAthena*)(NetConnection->PlayerController);
 
 			auto Pawn = SpawnActor<AFortPlayerPawnAthena>(GetPlayerStartLocation(), { 0,0,0 }, Core::PawnClass);

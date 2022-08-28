@@ -92,13 +92,23 @@ namespace SDK
 
 		std::string GetFullName();
 
+		template <typename T>
+		static T* LoadObject(std::string Path)
+		{
+			auto Path_ = std::wstring(Path.begin(), Path.end()).c_str();
+
+			static auto LoadObjectAddr = (uintptr_t)GetModuleHandle(0) + 0x1B387D0;
+			static auto StaticLoadObject = reinterpret_cast<T * (*)(UClass*, UObject*, const TCHAR*, const TCHAR*, uint32, UObject*, bool, void*)>(LoadObjectAddr);
+			return StaticLoadObject(T::StaticClass(), nullptr, Path_, nullptr, 0, nullptr, false, nullptr);
+		}
+
 		template <typename T_Fast>
 		static T_Fast* FindObjectFast(std::string name)
 		{
 			auto Name = std::wstring(name.begin(), name.end()).c_str();
 
 			static auto StaticFindObjectAddr = Cool::CoolSigScan("48 89 5C 24 ? 48 89 74 24 ? 55 57 41 54 41 56 41 57 48 8B EC 48 83 EC 60 80 3D ? ? ? ? ? 45 0F B6 F1");
-			auto StaticFindObject = (T_Fast * (*)(UClass*, UObject * Package, const wchar_t* OrigInName, bool ExactClass))(StaticFindObjectAddr);
+			static auto StaticFindObject = (T_Fast * (*)(UClass*, UObject * Package, const wchar_t* OrigInName, bool ExactClass))(StaticFindObjectAddr);
 			return StaticFindObject(nullptr, nullptr, Name, false);
 		}
 

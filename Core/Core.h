@@ -2,6 +2,7 @@
 
 #define SOLO
 //#define DUO
+//#define SQUAD
 //#define PLAYGROUND
 //#define LATEGAME
 

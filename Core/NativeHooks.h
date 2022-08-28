@@ -6,7 +6,7 @@ public:
 	static inline void (*ServerUpdateLevelVisibility)(APlayerController* PlayerController, FName PackageName, bool bIsVisible);
 	static inline void ServerUpdateLevelVisibilityHook(APlayerController* PlayerController, FName PackageName, bool bIsVisible)
 	{
-		if (PackageName.ToString().starts_with("Athena_SUB_5x5_House_"))
+		if (PackageName.ToString().contains("Athena_SUB_5x5_House_"))
 		{
 			static bool bSetup = false;
 			if (!bSetup)
@@ -23,6 +23,8 @@ public:
 				auto Playlist = UObject::FindObjectFast<UFortPlaylistAthena>("/Game/Athena/Playlists/Playground/Playlist_Playground.Playlist_Playground");
 #elif defined(LATEGAME)
 				auto Playlist = UObject::FindObjectFast<UFortPlaylistAthena>("/Game/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo");
+#else
+				auto Playlist = UObject::FindObjectFast<UFortPlaylistAthena>("/Game/Athena/Playlists/Playlist_DefaultSolo.Playlist_DefaultSolo");
 #endif
 
 				auto AthenaGameState = Cast<AFortGameStateAthena>(GetWorld()->GameState);
@@ -37,6 +39,8 @@ public:
 
 				AthenaGameMode->StartMatch();
 				AthenaGameMode->StartPlay();
+
+				Loot::InitTables();
 
 				Net::Listen();
 			}

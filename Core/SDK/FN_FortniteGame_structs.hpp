@@ -19734,7 +19734,7 @@ struct FFortLootPackageData : public FTableRowBase
 	struct FGameplayTagContainer                       GameplayTags;                                             // 0x0028(0x0020) (Edit, BlueprintVisible, BlueprintReadOnly)
 	struct FName                                       RequiredTag;                                              // 0x0048(0x0008) (Edit, BlueprintVisible, BlueprintReadOnly, ZeroConstructor, IsPlainOldData)
 	struct FString                                     LootPackageCall;                                          // 0x0050(0x0010) (Edit, BlueprintVisible, BlueprintReadOnly, ZeroConstructor)
-	unsigned char                                      UnknownData01[0x28];                                      // 0x0060(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortLootPackageData.ItemDefinition
+	TSoftObjectPtr<UFortItemDefinition>                ItemDefinition;                                           // 0x0060(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortLootPackageData.ItemDefinition
 	struct FString                                     PersistentLevel;                                          // 0x0088(0x0010) (Edit, BlueprintVisible, BlueprintReadOnly, ZeroConstructor)
 	int                                                MinWorldLevel;                                            // 0x0098(0x0004) (Edit, BlueprintVisible, BlueprintReadOnly, ZeroConstructor, IsPlainOldData)
 	int                                                MaxWorldLevel;                                            // 0x009C(0x0004) (Edit, BlueprintVisible, BlueprintReadOnly, ZeroConstructor, IsPlainOldData)

@@ -19,6 +19,8 @@
 #include "Util.h"
 #include "Core.h"
 
+#include "Loot.h"
+
 #include "Abilities.h"
 #include "Inventory.h"
 

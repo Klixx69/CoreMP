@@ -36763,7 +36763,7 @@ public:
 	struct FText                                       UIDescription;                                            // 0x0160(0x0018) (Edit, BlueprintVisible, DisableEditOnInstance)
 	struct FGameplayTagContainer                       HUDElementsToHide;                                        // 0x0178(0x0020) (Edit, BlueprintVisible, BlueprintReadOnly, DisableEditOnInstance)
 	unsigned char                                      UnknownData08[0x28];                                      // 0x0198(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortPlaylist.LootTierData
-	unsigned char                                      UnknownData09[0x28];                                      // 0x01C0(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortPlaylist.LootPackages
+	TSoftObjectPtr<UDataTable>                         LootPackages;                                             // 0x01C0(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortPlaylist.LootPackages
 	unsigned char                                      UnknownData10[0x28];                                      // 0x01E8(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortPlaylist.RangedWeapons
 	unsigned char                                      UnknownData11[0x28];                                      // 0x0210(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortPlaylist.GameData
 	unsigned char                                      UnknownData12[0x28];                                      // 0x0238(0x0028) UNKNOWN PROPERTY: SoftObjectProperty FortniteGame.FortPlaylist.ResourceRates

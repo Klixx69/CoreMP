@@ -3739,10 +3739,13 @@ public:
 class UDataTable : public UObject
 {
 public:
-	class UScriptStruct*                               RowStruct;                                                // 0x0028(0x0008) (ZeroConstructor, IsPlainOldData)
-	unsigned char                                      UnknownData00[0x50];                                      // 0x0030(0x0050) MISSED OFFSET
-	unsigned char                                      bStripFromClientBuilds : 1;                               // 0x0080(0x0001) (Edit)
-	unsigned char                                      UnknownData01[0x1F];                                      // 0x0081(0x001F) MISSED OFFSET
+	UScriptStruct*				RowStruct;
+	TMap<FName, uint8*>			RowMap;
+	uint8						bStripFromClientBuilds : 1;
+	FString						ImportPath_DEPRECATED;
+	FName						RowStructName;
+	TArray<uint8>				RowsSerializedWithTags;
+	TSet<UObject*>				TemporarilyReferencedObjects;
 
 	static UClass* StaticClass()
 	{

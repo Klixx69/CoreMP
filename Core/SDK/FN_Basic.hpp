@@ -497,13 +497,7 @@ namespace SDK
 
             FMemory_Free((void*)temp.c_str());
 
-            auto pos = name.rfind('/');
-            if (pos == std::string::npos)
-            {
-                return name;
-            }
-
-            return name.substr(pos + 1);
+            return name;
         }
 
         bool operator==(EName Name)
@@ -534,13 +528,7 @@ namespace SDK
 
             FMemory_Free((void*)temp.c_str());
 
-            auto pos = wName.rfind('/');
-            if (pos == std::wstring::npos)
-            {
-                return wName;
-            }
-
-            return wName.substr(pos + 1);
+            return wName;
         }
     };
 
@@ -708,6 +696,34 @@ namespace SDK
         FWeakObjectPtr WeakPtr;
         int32_t TagAtLastTest;
         TObjectID ObjectID;
+    };
+
+    struct FSoftObjectPath_
+    {
+        struct FName                                       AssetPathName;                                            // 0x0000(0x0008) (ZeroConstructor, IsPlainOldData)
+        struct FString                                     SubPathString;                                            // 0x0008(0x0010) (ZeroConstructor)
+    };
+
+    struct FSoftObjectPtr : public TPersistentObjectPtr<FSoftObjectPath_>
+    {
+    public:
+
+    };
+
+    template<class T = UObject>
+    struct TSoftObjectPtr
+    {
+        template <class U>
+        friend struct TSoftObjectPtr;
+
+    public:
+
+        FSoftObjectPtr SoftObjectPtr;
+
+        T* Get()
+        {
+            return UObject::FindObjectFast<T>(SoftObjectPtr.ObjectID.AssetPathName.ToString());
+        }
     };
 
     struct FStringAssetReference_
