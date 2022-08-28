@@ -428,12 +428,106 @@ public:
 		EditTool->OnRep_EditActor();
 	}
 
+	static inline void (*ServerAttemptInteract)(AFortPlayerController* PlayerController, AActor* ReceivingActor, UPrimitiveComponent* InteractComponent, TEnumAsByte<ETInteractionType> InteractType, UObject* OptionalObjectData);
+	static void ServerAttemptInteractHook(AFortPlayerController* PlayerController, AActor* ReceivingActor, UPrimitiveComponent* InteractComponent, TEnumAsByte<ETInteractionType> InteractType, UObject* OptionalObjectData)
+	{
+		if (!ReceivingActor->IsA(ABuildingContainer::StaticClass()))
+			return ServerAttemptInteract(PlayerController, ReceivingActor, InteractComponent, InteractType, OptionalObjectData);
+
+		auto Container = Cast<ABuildingContainer>(ReceivingActor);
+		if (Container->bAlreadySearched)
+			return ServerAttemptInteract(PlayerController, ReceivingActor, InteractComponent, InteractType, OptionalObjectData);
+
+		Container->bAlreadySearched = true;
+		Container->OnRep_bAlreadySearched();
+
+		if (ReceivingActor->GetFullName().contains("_Chest"))
+		{
+			Loot::SpawnLootForChest(Container);
+			static auto ChestOpenSound = UObject::FindObjectFast<USoundWave>("/Game/Sounds/Foley_Loot/Containers/Treasure_Chest/treasure_chest_sweet_shorter_03.treasure_chest_sweet_shorter_03");
+			PlayerController->FortClientPlaySoundAtLocation(ChestOpenSound, ReceivingActor->K2_GetActorLocation(), 1.0f, 1.0f);
+		}
+		else if (ReceivingActor->GetFullName().contains("_Ammo"))
+		{
+			Loot::SpawnLootForAmmoBox(Container);
+			static auto AmmoBoxOpenSound = UObject::FindObjectFast<USoundCue>("/Game/Sounds/Foley_Loot/Containers/Toolbox/Toolbox_SearchEnd8.Toolbox_SearchEnd8");
+			PlayerController->FortClientPlaySoundAtLocation(AmmoBoxOpenSound, ReceivingActor->K2_GetActorLocation(), 1.0f, 1.0f);
+		}
+
+		return ServerAttemptInteract(PlayerController, ReceivingActor, InteractComponent, InteractType, OptionalObjectData);
+	}
+
+	static void ServerHandlePickupHook(AFortPlayerPawn* Pawn, AFortPickup* Pickup, float InFlyTime, FVector InStartDirection, bool bPlayPickupSound)
+	{
+		auto Controller = Cast<AFortPlayerController>(Pawn->Controller);
+
+		if (!Controller)
+			return;
+
+		auto PickupLocData = *&Pickup->PickupLocationData;
+		PickupLocData.bPlayPickupSound = true;
+		PickupLocData.FlyTime = 0.75f;
+		PickupLocData.ItemOwner = Pawn;
+		PickupLocData.PickupTarget = Pawn;
+
+		auto ItemDefinition = Pickup->PrimaryPickupItemEntry.ItemDefinition;
+		auto ItemCount = Pickup->PrimaryPickupItemEntry.Count;
+
+		if (!ItemDefinition)
+			return;
+
+		if (ItemCount == 0)
+			return;
+
+		auto WorldInventory = Controller->WorldInventory;
+		auto QuickBar = Controller->QuickBars;
+
+		FGuid NewItemGuid = Inventory::AddItem(Controller, ItemDefinition, ItemCount);
+		auto NewItem = Inventory::FindItemFromGuid(Controller, NewItemGuid);
+		auto NewEntry = Inventory::FindEntryFromGuid(Controller, NewItemGuid);
+
+		if (ItemDefinition->GetDisplayAssetPath().AssetPathName.ToString().contains("Weapons"))
+		{
+			NewItem->ItemEntry.LoadedAmmo = Pickup->PrimaryPickupItemEntry.LoadedAmmo;
+			NewEntry->LoadedAmmo = Pickup->PrimaryPickupItemEntry.LoadedAmmo;
+			Controller->WorldInventory->Inventory.MarkItemDirty(NewItem->ItemEntry);
+			Controller->WorldInventory->Inventory.MarkItemDirty(*NewEntry);
+
+			for (int i = 0; i < QuickBar->PrimaryQuickBar.Slots.Num(); i++)
+			{
+				if (QuickBar->PrimaryQuickBar.Slots[i].Items.Data == NULL)
+				{
+					if (i == 0)
+						continue;
+
+					QuickBar->ServerAddItemInternal(NewItemGuid, EFortQuickBars::Primary, i);
+				}
+				else {
+					if (i >= 6)
+					{
+						int CurrentFocusedSlot = QuickBar->PrimaryQuickBar.CurrentFocusedSlot;
+						FGuid CurrentFocusedGuid = QuickBar->PrimaryQuickBar.Slots[CurrentFocusedSlot].Items[0];
+
+						Loot::SpawnPickup(Inventory::FindItemFromGuid(Controller, CurrentFocusedGuid)->ItemEntry.ItemDefinition, 1, Pawn->K2_GetActorLocation(), {}, false, Inventory::FindItemFromGuid(Controller, CurrentFocusedGuid)->ItemEntry.LoadedAmmo);
+						Inventory::RemoveItem(Controller, CurrentFocusedGuid);
+
+						QuickBar->EmptySlot(EFortQuickBars::Primary, i);
+						QuickBar->ServerAddItemInternal(NewItemGuid, EFortQuickBars::Primary, i);
+					}
+				}
+			}
+		}
+
+		Inventory::Update(Controller);
+	}
+
 	static void Init()
 	{
 		ConfirmEdit = decltype(ConfirmEdit)(Util::BaseAddress() + 0xE563C0);
 
 		auto DefaultPC = UObject::FindObject<AFortPlayerControllerAthena>("Default__Athena_PlayerController");
 		auto DefaultAbilityComp = UObject::FindObject<UFortAbilitySystemComponentAthena>("Default__FortAbilitySystemComponentAthena");
+		auto DefaultPawn = UObject::FindObject<APlayerPawn_Athena_C>("Default__PlayerPawn_Athena");
 
 		CREATE_HOOK(Util::BaseAddress() + 0x2AF8910, ServerUpdateLevelVisibilityHook, &ServerUpdateLevelVisibility);
 		CREATE_HOOK(Util::BaseAddress() + 0x177B4D0, OnDamageServerHook, &OnDamageServer);
@@ -445,12 +539,12 @@ public:
 		VIRTUAL_HOOK(DefaultPC, 530, ServerCreateBuildingActorHook, nullptr);
 		VIRTUAL_HOOK(DefaultPC, 532, ServerEditBuildingActorHook, nullptr);
 		VIRTUAL_HOOK(DefaultPC, 535, ServerEndEditingBuildingActor, nullptr);
+		VIRTUAL_HOOK(DefaultPC, 580, ServerAttemptInteractHook, &ServerAttemptInteract);
 
+		VIRTUAL_HOOK(DefaultPawn, 435, ServerHandlePickupHook, nullptr);
 
 		VIRTUAL_HOOK(DefaultAbilityComp, 140, ServerTryActivateAbilityHook, nullptr);
 		VIRTUAL_HOOK(DefaultAbilityComp, 138, ServerTryActivateAbilityWithEventDataHook, nullptr);
 		VIRTUAL_HOOK(DefaultAbilityComp, 155, ServerAbilityRPCBatchHook, nullptr);
-
-
 	}
 };

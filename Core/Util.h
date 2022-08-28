@@ -1,6 +1,6 @@
 #pragma once
 
-std::fstream LogFile;
+std::ofstream LogFile;
 
 #define CORE_LOG(Category, Msg, ...) \
 Util::Log(#Category, std::format(Msg, __VA_ARGS__));

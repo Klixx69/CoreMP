@@ -40,7 +40,7 @@ public:
 			if (!ItemDef)
 				continue;
 
-			auto RowNameStr = ItemDef->Name.ToString();
+			auto RowNameStr = RowStruct->ItemDefinition.SoftObjectPtr.ObjectID.AssetPathName.ToString();
 			CORE_LOG(Loot, "Test: {}", RowNameStr);
 			if (RowNameStr.contains("Resource"))
 				Resources.push_back(ItemDef);
@@ -48,7 +48,7 @@ public:
 				Ammo.push_back(ItemDef);
 			else if (RowNameStr.contains("Consumable"))
 				Consumables.push_back(ItemDef);
-			else if (RowNameStr.compare("Weapon"))
+			else if (RowNameStr.contains("Weapons"))
 			{
 				switch (ItemDef->Tier)
 				{
@@ -126,13 +126,14 @@ public:
 		return Resources[rand() % Resources.size()];
 	}
 
-	static void SpawnPickup(UFortItemDefinition* ItemDef, int Count, FVector Location, FRotator Rotation = {}, bool bTossedFromContainer = false)
+	static void SpawnPickup(UFortItemDefinition* ItemDef, int Count, FVector Location, FRotator Rotation = {}, bool bTossedFromContainer = false, int LoadedAmmo = 0)
 	{
 		if (ItemDef)
 		{
 			auto NewPickup = SpawnActor<AFortPickupAthena>(Location, Rotation);
 			NewPickup->PrimaryPickupItemEntry.ItemDefinition = ItemDef;
 			NewPickup->PrimaryPickupItemEntry.Count = Count;
+			NewPickup->PrimaryPickupItemEntry.LoadedAmmo = LoadedAmmo;
 			NewPickup->OnRep_PrimaryPickupItemEntry();
 
 			NewPickup->TossPickup(Location, nullptr, 999, true);
@@ -187,5 +188,41 @@ public:
 		}
 	}
 
+	static void SpawnLootForChest(ABuildingContainer* Chest)
+	{
+		auto Location = Chest->K2_GetActorLocation();
 
+		if (auto RandomWeapon = GetRandomWeapon())
+		{
+			SpawnPickup(RandomWeapon, 1, Location, {}, true);
+
+			if (auto Ammo = Cast<UFortWorldItemDefinition>(RandomWeapon)->GetAmmoWorldItemDefinition_BP())
+			{
+				SpawnPickup(Ammo, Ammo->DropCount * 2, Location, {}, true);
+			}
+		}
+
+		if (auto RandomConsumable = GetRandomConsumable())
+		{
+			SpawnPickup(RandomConsumable, 1, Location, {}, true);
+		}
+
+		if (auto RandomResource = GetRandomResource())
+		{
+			SpawnPickup(RandomResource, 30, Location, {}, true);
+		}
+	}
+
+	static void SpawnLootForAmmoBox(ABuildingContainer* AmmoBox)
+	{
+		auto Location = AmmoBox->K2_GetActorLocation();
+
+		for (int i = 0; i < 2; i++)
+		{
+			if (auto RandomAmmo = GetRandomAmmo())
+			{
+				SpawnPickup(RandomAmmo, Cast<UFortWorldItemDefinition>(RandomAmmo)->DropCount * 3, Location, {}, true);
+			}
+		}
+	}
 };

@@ -33,6 +33,36 @@ public:
 		return nullptr;
 	}
 
+	static UFortWorldItem* FindItemFromGuid(AFortPlayerController* PlayerController, FGuid Guid)
+	{
+		for (int i = 0; i < PlayerController->WorldInventory->Inventory.ItemInstances.Num(); i++)
+		{
+			auto ItemInstance = PlayerController->WorldInventory->Inventory.ItemInstances[i];
+
+			if (ItemInstance->ItemEntry.ItemGuid == Guid)
+			{
+				return ItemInstance;
+			}
+		}
+
+		return nullptr;
+	}
+
+	static FFortItemEntry* FindEntryFromGuid(AFortPlayerController* PlayerController, FGuid Guid)
+	{
+		for (int i = 0; i < PlayerController->WorldInventory->Inventory.ReplicatedEntries.Num(); i++)
+		{
+			auto Entry = &PlayerController->WorldInventory->Inventory.ReplicatedEntries[i];
+
+			if (Entry->ItemGuid == Guid)
+			{
+				return Entry;
+			}
+		}
+
+		return nullptr;
+	}
+
 	static UFortWorldItem* CreateItem(UFortItemDefinition* ItemDef, int Count)
 	{
 		return Cast<UFortWorldItem>(ItemDef->CreateTemporaryItemInstanceBP(Count, 1));
@@ -86,14 +116,24 @@ public:
 		return Guid;
 	}
 
-	static void RemoveItem(AFortPlayerController* PlayerController, UFortWorldItem* Item)
+	static void RemoveItem(AFortPlayerController* PlayerController, FGuid Guid)
 	{
+		for (int i = 0; i < PlayerController->WorldInventory->Inventory.ItemInstances.Num(); i++)
+		{
+			if (PlayerController->WorldInventory->Inventory.ItemInstances[i]->ItemEntry.ItemGuid == Guid)
+			{
+				PlayerController->WorldInventory->Inventory.ItemInstances.Remove(i);
 
-	}
-
-	static void RemoveItem(AFortPlayerController* PlayerController, UFortItemDefinition* ItemDef)
-	{
-
+				for (int j = 0; j < PlayerController->WorldInventory->Inventory.ReplicatedEntries.Num(); j++)
+				{
+					if (PlayerController->WorldInventory->Inventory.ReplicatedEntries[j].ItemGuid == Guid)
+					{
+						PlayerController->WorldInventory->Inventory.ReplicatedEntries.Remove(j);
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	static void DropAllLootInInventory(AFortPlayerController* PlayerController)
